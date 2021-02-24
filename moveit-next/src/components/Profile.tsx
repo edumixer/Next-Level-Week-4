@@ -6,7 +6,10 @@ export function Profile() {
       <img src="https://github.com/edumixer.png" alt="Eduardo Franco"/>
       <div>
         <strong>Eduardo Franco</strong>
-        <p>Level 1</p>
+        <p>
+          <img src="icons/level.svg" alt="Level"/>
+          Level 1
+        </p>
       </div>
     </div>
     );
