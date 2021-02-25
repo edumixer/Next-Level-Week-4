@@ -1,4 +1,4 @@
-import { createContext, useState, ReactNode } from 'react';
+import { createContext, useState, ReactNode, useEffect } from 'react';
 import challenges from '../../challenges.json';
 
 /* Criando uma interface para mostrar qual tipo ela vai ter */
@@ -10,13 +10,14 @@ interface Challenge {
 
 interface ChallengesContextData {
   level: number;
-  currentExperiencie: number;
+  currentExperience: number;
   experienceToNextLevel: number;
   challengesCompleted: number;
   activeChallenge: Challenge;
   levelUp: () => void;
   startNewChallenge: () => void;
   resetChallenge: () => void;
+  completeChallenge: () => void;
 }
 
 interface ChallengesProviderProps {
@@ -27,12 +28,16 @@ export const ChallengesContext = createContext({} as ChallengesContextData);
 
 export function ChallengesProvider({ children }: ChallengesProviderProps) {
   const [level, setLevel] = useState(1);
-  const [currentExperiencie, setCurrentExperiencie] = useState(0);
+  const [currentExperience, setCurrentExperience] = useState(0);
   const [challengesCompleted, setChallengesCompleted] = useState(0);
 
   const [activeChallenge, setActiveChallenge] = useState(null);
   
   const experienceToNextLevel = Math.pow((level + 1) * 4, 2) /* calculo de xp para o proxiumo level */
+
+  useEffect(() => {
+    Notification.requestPermission();
+  }, [])
 
   function levelUp() {
     setLevel(level + 1);
@@ -43,23 +48,52 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
     const challenge = challenges[randomChallengeIndex];
 
     setActiveChallenge(challenge);
+
+    new Audio('/notification.mp3').play();
+
+    if (Notification.permission === 'granted') {
+      new Notification('Novo desafio 🎉', {
+        body: `Valendo ${challenge.amount}xp!`
+      })
+    }
   }
   
   function resetChallenge() {
     setActiveChallenge(null);
   }
 
+  function completeChallenge() {
+    if (!activeChallenge) {
+      return;
+    }
+
+    const { amount } = activeChallenge;
+
+    // let it change: pode mudar no futuro o seu valor
+    let finalExperience = currentExperience + amount;
+
+    if (finalExperience >= experienceToNextLevel) {
+      finalExperience = finalExperience - experienceToNextLevel;
+      levelUp();
+    }
+
+    setCurrentExperience(finalExperience);
+    setActiveChallenge(null);
+    setChallengesCompleted(challengesCompleted + 1);
+  }
+
   return (
     <ChallengesContext.Provider 
       value={{ 
         level, 
-        currentExperiencie,
+        currentExperience,
         experienceToNextLevel,
         challengesCompleted, 
         levelUp ,
         startNewChallenge,
         activeChallenge,
         resetChallenge,
+        completeChallenge,
       }}
     >
       {children}
